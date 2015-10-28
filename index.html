@@ -90,6 +90,7 @@ function init() {
 
   manager = new WebVRManager(renderer, effect, {hideButton: false});
 
+  //Scene objects
   var light = new THREE.HemisphereLight(0x777777, 0x000000, 0.6);
   scene.add(light);
 
@@ -128,7 +129,7 @@ function init() {
   mesh.rotation.x = -Math.PI / 2;
   scene.add(mesh);
 
-  /////// START CONTENT HERE ////////
+  /////// beautiful D3 code ////////
   d3.csv('data.csv', population, function(data){ 
     xscale.domain([0, data.length - 1]);
     yscale.domain([0, d3.max(data, function(d){ return d.all; })]);
@@ -208,6 +209,7 @@ function init() {
   srctext.position.set(0 - xOffset, 1, 0);
   scene.add(srctext);
 
+  // Reticle configuration
   Reticulum.init(camera, {
     proximity: false,
     reticle: {
@@ -234,12 +236,16 @@ function init() {
     }
   });
   scene.add(camera);
+  //end Reticle configuration
 
   window.addEventListener('resize', onResize, false);
+
+  //binding events from cardboard button
   window.addEventListener("touchend", handleTouch, false);
   window.addEventListener("click", handleClick, false);
   animate();
 }
+
 function animate(timestamp) {
   Reticulum.update();
   controls.update();
@@ -248,7 +254,7 @@ function animate(timestamp) {
   requestAnimationFrame(animate);
 }
 
-
+//D3 helper function for parsing population dataset
 function population(d) {
 
   d.all = +d.all;
@@ -312,6 +318,7 @@ function onResize() {
   effect.setSize(width, height);
 }
 
+//Cardboard button event handlers
 function handleClick() {
   Reticulum.detectHit(true);
 }
