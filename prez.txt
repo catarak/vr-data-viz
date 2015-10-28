@@ -1,0 +1,35 @@
+What is THREE.js?
+
+It is a 3D graphics JavaScript library. One of its main benefits is that it can render using the WebGL API. It simplifies a lot of annoying stuff by A LOT. The WebGL API allows your browser to access you computer's GPU and do the graphics processing there, instead of in the browser. This allows you to make incredible things.
+
+THREE.js uses a lot of graphics terminology. If you ever look at the documentation it's still not helpful, I recommend searching for the terms you're confused about outside of the context of just THREE.js
+
+Basic elements of a THREE.js sketch
+
+Renderer - determines how everything is being rendered. You can choose canvas, svg, or WebGL. WebGL runs on your GPU, therefore it is far superior. 
+
+Scene - it holds everything that you want to be rendered. 
+
+Camera - your viewport into the scene. 
+
+Mesh - think of this as an object. It has a material and a geometry. The geometry defines the shape of the object, and the material defines its appearance (e.g. color).
+
+Lights - You have to have some lights in your scene, or else it will be totally dark. (unless, you use materials that don't respond to light, e.g. MeshNormalMaterial). 
+
+Basic code setup (if you've used Processing, Arduino, P5.js, etc. this should look familiar)
+
+function init() {
+  //initial configuration
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+}
+
+if you're not familiar, requestAnimationFrame is very similar to setTimeout, except you don't specify the rate. it depends on the frame rate of your browser and your computer, which is usually 60fps. Instead of requesting the browser to redraw the scene at a set interval length, it redraws the scene at the next available opportunity. This also means that the CPU can optimize the performance based on other factors. And it will slow way down if, say, you've navigated to a new tab and you can't see the animation. 
+
+Three.js + VR
+
+VRControls - connects the head tracking movement to the scene's camera
+VREffect - converts the scene to stereoscopic rendering. 
+VRManager - controls configuration and rendering for various devices, e.g. your laptop, Google Cardboard, Oculus.
