@@ -263,7 +263,8 @@ var Reticulum = (function () {
         
     };
 
-    var detectHit = function() {
+    var detectHit = function(clicked) {
+        clicked = clicked || false;
         try {
             raycaster.setFromCamera( vector, settings.camera );
         } catch (e) {
@@ -297,7 +298,10 @@ var Reticulum = (function () {
             }
 
             //Is it a new object?
-            if( INTERSECTED != newObj ) {
+            if (clicked) {
+                gazeClick(newObj);
+            }
+            else if( INTERSECTED != newObj ) {
                 //If old INTERSECTED i.e. not null reset and gazeout 
                 if ( INTERSECTED ) {
                     gazeOut(INTERSECTED);
@@ -330,6 +334,12 @@ var Reticulum = (function () {
     
     var setColor = function(threeObject, color) {
         threeObject.material.color.setHex( color );
+    };
+
+    var gazeClick = function(threeObject) {
+        if ( threeObject.ongazeclick != undefined ) {
+            threeObject.ongazeclick();
+        }
     };
 
     var gazeOut = function(threeObject) {
@@ -437,6 +447,7 @@ var Reticulum = (function () {
                 return;
             }
             initiate(c, o);
-        }
+        },
+        detectHit: detectHit
     };
 })();

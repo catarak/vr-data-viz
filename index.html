@@ -158,6 +158,10 @@ function init() {
         this.material.emissive.setHex( 0x0000cc );
       }
 
+      columnmesh.ongazeclick = function() {
+        this.material.emissive.setHex( 0xffffff );
+      }
+
       Reticulum.addCollider(columnmesh, { fuse: true } );
 
       scene.add(columnmesh);
@@ -232,6 +236,8 @@ function init() {
   scene.add(camera);
 
   window.addEventListener('resize', onResize, false);
+  window.addEventListener("touchend", handleTouch, false);
+  window.addEventListener("click", handleClick, false);
   animate();
 }
 function animate(timestamp) {
@@ -304,6 +310,14 @@ function onResize() {
   camera.updateProjectionMatrix();
 
   effect.setSize(width, height);
+}
+
+function handleClick() {
+  Reticulum.detectHit(true);
+}
+
+function handleTouch() {
+  Reticulum.detectHit(true);
 }
 
 window.onload = init;
