@@ -58,6 +58,7 @@ WebVRConfig = {
 <script src="js/optimer_bold.typeface.js"></script>
 <script src="js/optimer_regular.typeface.js"></script>
 <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script src="js/third-party/reticulum.js"></script>
 
 
 <script>
@@ -135,16 +136,30 @@ function init() {
     var columnwidth = (chartwidth / data.length);
     //for some spacing
     columnwidth -= columnwidth * 0.1;
-    var columnmaterial = new THREE.MeshPhongMaterial({ color: "#0000ff" });
 
     data.forEach(function(d, i, a){
 
       var colheight = yscale(d.all);
+      var columnmaterial = new THREE.MeshPhongMaterial({ color: "#0000ff" });
       var columngeo = new THREE.BoxGeometry(columnwidth, colheight, columnwidth);
       var columnmesh = new THREE.Mesh(columngeo, columnmaterial);
       columnmesh.position.set(xscale(i), colheight/2 + marginbottom, 0);
       //Box geometry is positioned at its’ center,
       //so we need to move it up by half the height
+      columnmesh.ongazeover = function(){
+        this.material.emissive.setHex( 0xffcc00 );
+      }
+      // have the columnmesh react when user looks away from it
+      columnmesh.ongazeout = function(){
+        this.material.emissive.setHex( 0xcc0000 );
+      }
+      // have the columnmesh react when user looks at it for a specific time
+      columnmesh.ongazelong = function(){
+        this.material.emissive.setHex( 0x0000cc );
+      }
+
+      Reticulum.addCollider(columnmesh, { fuse: true } );
+
       scene.add(columnmesh);
 
     });
@@ -189,11 +204,38 @@ function init() {
   srctext.position.set(0 - xOffset, 1, 0);
   scene.add(srctext);
 
+  Reticulum.init(camera, {
+    proximity: false,
+    reticle: {
+      visible: true,
+      far: 200, //Defines the reticle's resting point when no object has been targeted
+      color: 0xcc0000,
+      innerRadius: 0.0001,
+      outerRadius: 0.003,
+      hover: {
+        color: 0xcc0000,
+        innerRadius: 0.02,
+        outerRadius: 0.024,
+        speed: 5,
+        vibrate: 50 //Set to 0 or [] to disable
+      }
+    },
+    fuse: {
+      visible: false,
+      duration: 2.5,
+      color: 0x00fff6,
+      innerRadius: 0.045,
+      outerRadius: 0.06,
+      vibrate: 0 //Set to 0 or [] to disable
+    }
+  });
+  scene.add(camera);
+
   window.addEventListener('resize', onResize, false);
   animate();
 }
 function animate(timestamp) {
-
+  Reticulum.update();
   controls.update();
   camera.updateMatrixWorld();
   manager.render(scene, camera, timestamp);
