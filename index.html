@@ -1,294 +1,270 @@
 <!DOCTYPE html>
+
 <html lang="en">
-  <head>
-    <title>3D chart!</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-    <style>
-      body {
-        margin: 0px;
-        overflow: hidden;
-      }
-      #container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="container"></div>
+<head>
+<title>Web VR boilerplate</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<style>
+body {
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  color: #fff;
+  margin: 0px;
+  padding: 0;
+  overflow: hidden;
+}
+</style>
+</head>
 
-  <script src="js/third-party/threejs/three.js"></script>
-  <script src="js/third-party/threejs/StereoEffect.js"></script>
-  <script src="js/third-party/threejs/DeviceOrientationControls.js"></script>
-  <script src="js/third-party/threejs/OrbitControls.js"></script>
-  <script src="js/third-party/threejs/FontUtils.js"></script>
-  <script src="js/third-party/threejs/TextGeometry.js"></script>
-  <script src="js/optimer_bold.typeface.js"></script>
-  <script src="js/optimer_regular.typeface.js"></script>
-  <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<body>
 
-  <script>
-    var camera, scene, renderer;
-    var effect, controls;
-    var element, container;
+</body>
 
-    //d3 variables
-    var marginbottom = 4, chartwidth = 90, chartheight = 30; //3D units
-    var xscale = d3.scale.linear().range([-chartwidth/2, chartwidth/2]),
-        yscale = d3.scale.linear().range([0, chartheight]);
+<script>
+/*
+ * Debug parameters.
+ */
+WebVRConfig = {
+  /**
+   * webvr-polyfill configuration
+   */
+  // Forces availability of VR mode.
+  FORCE_ENABLE_VR: true, // Default: false.
+  // Complementary filter coefficient. 0 for accelerometer, 1 for gyro.
+  //K_FILTER: 0.98, // Default: 0.98.
+  // How far into the future to predict during fast motion.
+  //PREDICTION_TIME_S: 0.050, // Default: 0.050s.
+  /**
+   * webvr-boilerplate configuration
+   */
+  // Forces distortion in VR mode.
+  //FORCE_DISTORTION: true, // Default: false.
+  // Override the distortion background color.
+  //DISTORTION_BGCOLOR: {x: 1, y: 0, z: 0, w: 1}, // Default: (0,0,0,1).
+};
+</script>
+<script src="js/third-party/threejs/three.js"></script>
+<script src="js/third-party/threejs/VRControls.js"></script>
+<script src="js/third-party/threejs/VREffect.js"></script>
+<script src="js/third-party/webvr-polyfill.js"></script>
+<script src="js/third-party/webvr-manager.js"></script>
+<script src="js/third-party/threejs/FontUtils.js"></script>
+<script src="js/third-party/threejs/TextGeometry.js"></script>
+<script src="js/optimer_bold.typeface.js"></script>
+<script src="js/optimer_regular.typeface.js"></script>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 
-    var clock = new THREE.Clock();
 
-    var gazePointer;
+<script>
+var camera, scene, renderer;
+var effect, controls;
+var element, container;
+var manager;
+var cube;
 
-    init();
-    animate();
+//d3 variables
+var marginbottom = 4, chartwidth = 90, chartheight = 30; //3D units
+var xscale = d3.scale.linear().range([-chartwidth/2, chartwidth/2]),
+    yscale = d3.scale.linear().range([0, chartheight]);
 
-    function init() {
-      renderer = new THREE.WebGLRenderer({antialias: true});
-      element = renderer.domElement;
-      container = document.getElementById('container');
-      container.appendChild(element);
+function init() {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  document.body.appendChild(renderer.domElement);
 
-      effect = new THREE.StereoEffect(renderer);
-
-      scene = new THREE.Scene();
-
-      camera = new THREE.PerspectiveCamera(90, 1, 0.001, 700);
+  scene = new THREE.Scene();
+  
+  camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.001, 700);
       camera.position.set(0, 15, 30);
-      scene.add(camera);
 
-      controls = new THREE.OrbitControls(camera, element);
-      controls.constraint.rotateUp(Math.PI / 4);
-      controls.target.set(
-        camera.position.x,
-        camera.position.y + 0.1,
-        camera.position.z - 0.1
-      );
-      controls.enableZoom = false;
-      controls.enablePan = false;
+  controls = new THREE.VRControls(camera);
 
-      function setOrientationControls(e) {
-        if (!e.alpha) {
-          return;
-        }
+  effect = new THREE.VREffect(renderer);
+  effect.setSize(window.innerWidth, window.innerHeight);
 
-        controls = new THREE.DeviceOrientationControls(camera, true);
-        controls.connect();
-        controls.update();
+  manager = new WebVRManager(renderer, effect, {hideButton: false});
 
-        element.addEventListener('click', fullscreen, false);
+  var light = new THREE.HemisphereLight(0x777777, 0x000000, 0.6);
+  scene.add(light);
 
-        window.removeEventListener('deviceorientation', setOrientationControls, true);
-      }
-      window.addEventListener('deviceorientation', setOrientationControls, true);
+  var objlight = new THREE.PointLight(0xffffff, 0.7);
+  objlight.position.set(0, 50, 70);
+  scene.add(objlight);
 
+  var texture = THREE.ImageUtils.loadTexture(
+    'textures/patterns/yellowchecker.png'
+  );
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat = new THREE.Vector2(50, 50);
+  texture.anisotropy = renderer.getMaxAnisotropy();
 
-      var light = new THREE.HemisphereLight(0x777777, 0x000000, 0.6);
-      scene.add(light);
+  spectexture = THREE.ImageUtils.loadTexture(
+    'textures/patterns/blacklinegrid.png'
+  );
+  spectexture.wrapS = THREE.RepeatWrapping;
+  spectexture.wrapT = THREE.RepeatWrapping;
+  spectexture.repeat = new THREE.Vector2(50, 50);
+  spectexture.anisotropy = renderer.getMaxAnisotropy();
 
-      var objlight = new THREE.PointLight(0xffffff, 0.7);
-      objlight.position.set(0, 50, 70);
-      scene.add(objlight);
+  var material = new THREE.MeshPhongMaterial({
+    color: 0xffffff,
+    specular: 0xffffff,
+    shininess: 5,
+    shading: THREE.FlatShading,
+    map: texture,
+    specularMap: spectexture
+  });
 
-      var texture = THREE.ImageUtils.loadTexture(
-        'textures/patterns/yellowchecker.png'
-      );
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat = new THREE.Vector2(50, 50);
-      texture.anisotropy = renderer.getMaxAnisotropy();
+  var geometry = new THREE.PlaneGeometry(1000, 1000);
 
-      spectexture = THREE.ImageUtils.loadTexture(
-        'textures/patterns/blacklinegrid.png'
-      );
-      spectexture.wrapS = THREE.RepeatWrapping;
-      spectexture.wrapT = THREE.RepeatWrapping;
-      spectexture.repeat = new THREE.Vector2(50, 50);
-      spectexture.anisotropy = renderer.getMaxAnisotropy();
+  var mesh = new THREE.Mesh(geometry, material);
+  mesh.rotation.x = -Math.PI / 2;
+  scene.add(mesh);
 
-      var material = new THREE.MeshPhongMaterial({
-        color: 0xffffff,
-        specular: 0xffffff,
-        shininess: 5,
-        shading: THREE.FlatShading,
-        map: texture,
-        specularMap: spectexture
-      });
+  /////// START CONTENT HERE ////////
+  d3.csv('data.csv', population, function(data){ 
+    xscale.domain([0, data.length - 1]);
+    yscale.domain([0, d3.max(data, function(d){ return d.all; })]);
+    
+    var columnwidth = (chartwidth / data.length);
+    //for some spacing
+    columnwidth -= columnwidth * 0.1;
+    var columnmaterial = new THREE.MeshPhongMaterial({ color: "#0000ff" });
 
-      var geometry = new THREE.PlaneGeometry(1000, 1000);
+    data.forEach(function(d, i, a){
 
-      var mesh = new THREE.Mesh(geometry, material);
-      mesh.rotation.x = -Math.PI / 2;
-      scene.add(mesh);
+      var colheight = yscale(d.all);
+      var columngeo = new THREE.BoxGeometry(columnwidth, colheight, columnwidth);
+      var columnmesh = new THREE.Mesh(columngeo, columnmaterial);
+      columnmesh.position.set(xscale(i), colheight/2 + marginbottom, 0);
+      //Box geometry is positioned at its’ center,
+      //so we need to move it up by half the height
+      scene.add(columnmesh);
 
-      window.addEventListener('resize', resize, false);
-      setTimeout(resize, 1);
+    });
 
-      /////// START CONTENT HERE ////////
-      d3.csv('data.csv', population, function(data){ 
-        xscale.domain([0, data.length - 1]);
-        yscale.domain([0, d3.max(data, function(d){ return d.all; })]);
-        
-        var columnwidth = (chartwidth / data.length);
-        //for some spacing
-        columnwidth -= columnwidth * 0.1;
-        var columnmaterial = new THREE.MeshPhongMaterial({ color: "#0000ff" });
+    yscale.ticks(5).forEach(function(t, i, a){
+      var label = createType({text: "" + (t/1000000), size: 1.5});
+      var xOffset = ( label.geometry.boundingBox.max.x - label.geometry.boundingBox.min.x );
+      label.position.set(-chartwidth/2 - xOffset - 2.5, yscale(t) + marginbottom - 0.5, 0);
+      scene.add(label);
 
-        data.forEach(function(d, i, a){
+      var lineGeometry = new THREE.Geometry();
+      var vertArray = lineGeometry.vertices;
+      vertArray.push( new THREE.Vector3(-chartwidth/2 - 1.5, yscale(t) + marginbottom, 0),
+        new THREE.Vector3(chartwidth/2, yscale(t) + marginbottom, 0) );
+      lineGeometry.computeLineDistances();
+      var lineMaterial = new THREE.LineBasicMaterial( { color: 0xaaaaaa } );
+      var line = new THREE.Line( lineGeometry, lineMaterial );
+      scene.add(line);
 
-          var colheight = yscale(d.all);
-          var columngeo = new THREE.BoxGeometry(columnwidth, colheight, columnwidth);
-          var columnmesh = new THREE.Mesh(columngeo, columnmaterial);
-          columnmesh.position.set(xscale(i), colheight/2 + marginbottom, 0);
-          //Box geometry is positioned at its’ center,
-          //so we need to move it up by half the height
-          scene.add(columnmesh);
+    });
 
-        });
+  });
 
-        yscale.ticks(5).forEach(function(t, i, a){
-          var label = createType({text: "" + (t/1000000), size: 1.5});
-          var xOffset = ( label.geometry.boundingBox.max.x - label.geometry.boundingBox.min.x );
-          label.position.set(-chartwidth/2 - xOffset - 2.5, yscale(t) + marginbottom - 0.5, 0);
-          scene.add(label);
+  var title = createType({text: "U.S. Population By Age, January 2000 in millions"});
+  title.position.set(-chartwidth/2, chartheight + 10, -5);
+  scene.add(title);
 
-          var lineGeometry = new THREE.Geometry();
-          var vertArray = lineGeometry.vertices;
-          vertArray.push( new THREE.Vector3(-chartwidth/2 - 1.5, yscale(t) + marginbottom, 0),
-            new THREE.Vector3(chartwidth/2, yscale(t) + marginbottom, 0) );
-          lineGeometry.computeLineDistances();
-          var lineMaterial = new THREE.LineBasicMaterial( { color: 0xaaaaaa } );
-          var line = new THREE.Line( lineGeometry, lineMaterial );
-          scene.add(line);
+  var xzerolabel = createType({text: "0 years old", size: 1.5});
+  xzerolabel.position.set(-chartwidth/2 - 1, 2, 0);
+  scene.add(xzerolabel);
 
-        });
-
-      });
-
-      var title = createType({text: "U.S. Population By Age, January 2000 in millions"});
-      title.position.set(-chartwidth/2, chartheight + 10, -5);
-      scene.add(title);
-
-      var xzerolabel = createType({text: "0 years old", size: 1.5});
-      xzerolabel.position.set(-chartwidth/2 - 1, 2, 0);
-      scene.add(xzerolabel);
-
-      var x100label = createType({text: "100+ years old", size: 1.5});
-      //get size of text label
-      var xOffset = ( x100label.geometry.boundingBox.max.x -
-              x100label.geometry.boundingBox.min.x );
-      x100label.position.set(chartwidth/2 - xOffset, 2, 0);
-      scene.add(x100label);
+  var x100label = createType({text: "100+ years old", size: 1.5});
+  //get size of text label
+  var xOffset = ( x100label.geometry.boundingBox.max.x -
+          x100label.geometry.boundingBox.min.x );
+  x100label.position.set(chartwidth/2 - xOffset, 2, 0);
+  scene.add(x100label);
 
 
-      var srctext = createType({text: "Source: U.S. Census", size: 1});
-      var xOffset = 0.5 * ( x100label.geometry.boundingBox.max.x - x100label.geometry.boundingBox.min.x );
-      srctext.position.set(0 - xOffset, 1, 0);
-      scene.add(srctext);
+  var srctext = createType({text: "Source: U.S. Census", size: 1});
+  var xOffset = 0.5 * ( x100label.geometry.boundingBox.max.x - x100label.geometry.boundingBox.min.x );
+  srctext.position.set(0 - xOffset, 1, 0);
+  scene.add(srctext);
 
-      var sphereGeometry = new THREE.SphereGeometry(0.05);
-      var sphereMaterial = new THREE.MeshBasicMaterial({ color: "#ffff00" });
-      gazePointer = new THREE.Mesh(sphereGeometry, sphereMaterial);
-      scene.add(gazePointer);
+  window.addEventListener('resize', onResize, false);
+  animate();
+}
+function animate(timestamp) {
 
-    }
+  controls.update();
+  camera.updateMatrixWorld();
+  manager.render(scene, camera, timestamp);
+  requestAnimationFrame(animate);
+}
 
 
-    function population(d) {
+function population(d) {
 
-      d.all = +d.all;
-      
-      d.male = +d.male;
-      
-      d.female = +d.female;
-      
-      return d;
+  d.all = +d.all;
+  
+  d.male = +d.male;
+  
+  d.female = +d.female;
+  
+  return d;
 
-    }
+}
 
-    function resize() {
-      var width = container.offsetWidth;
-      var height = container.offsetHeight;
+function createType(options) {
+  var height = options.height || 0.1,
+      size = options.size || 3,
+      material = new THREE.MeshFaceMaterial( [
+        new THREE.MeshPhongMaterial( { color: 0xffffff, shading: THREE.FlatShading } ), // front
+        new THREE.MeshPhongMaterial( { color: 0xffffff, shading: THREE.SmoothShading } ) // side
+      ] ),
+      text = options.text || "Test";
 
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
+  var textGeo = new THREE.TextGeometry( text, {
 
-      //renderer.setSize(width, height);
-      effect.setSize(width, height);
-    }
+      size: size,
+      height: height,
+      curveSegments: 4,
 
-    function update(dt) {
-      resize();
+      font: "optimer",
+      weight: "normal",
+      style: "normal",
 
-      camera.updateProjectionMatrix();
+      bevelEnabled: false,
 
-      controls.update(dt);
+      material: 0,
+      extrudeMaterial: 1
 
-      gazePointer.position.set( 0, 0, -10 ); 
-      gazePointer.position.applyMatrix4( camera.matrixWorld );
-    }
+    });
 
-    function render(dt) {
-      // renderer.render(scene, camera);
-      effect.render(scene, camera);
-    }
+    textGeo.computeBoundingBox();
 
-    function animate(t) {
-      requestAnimationFrame(animate);
+    var textMesh1 = new THREE.Mesh( textGeo, material );
 
-      update(clock.getDelta());
-      render(clock.getDelta());
-    }
+    return textMesh1;
+}
 
-    function fullscreen() {
-      if (container.requestFullscreen) {
-        container.requestFullscreen();
-      } else if (container.msRequestFullscreen) {
-        container.msRequestFullscreen();
-      } else if (container.mozRequestFullScreen) {
-        container.mozRequestFullScreen();
-      } else if (container.webkitRequestFullscreen) {
-        container.webkitRequestFullscreen();
-      }
-    }
+// Reset the position sensor when 'z' pressed.
+function onKey(event) {
+  if (event.keyCode == 90) { // z
+    controls.resetSensor();
+  }
+}
+window.addEventListener('keydown', onKey, true);
 
-    function createType(options) {
-      var height = options.height || 0.1,
-          size = options.size || 3,
-          material = new THREE.MeshFaceMaterial( [
-            new THREE.MeshPhongMaterial( { color: 0xffffff, shading: THREE.FlatShading } ), // front
-            new THREE.MeshPhongMaterial( { color: 0xffffff, shading: THREE.SmoothShading } ) // side
-          ] ),
-          text = options.text || "Test";
+function onResize() {
+  var width = window.innerWidth;
+  var height = window.innerHeight;
 
-      var textGeo = new THREE.TextGeometry( text, {
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
 
-          size: size,
-          height: height,
-          curveSegments: 4,
+  effect.setSize(width, height);
+}
 
-          font: "optimer",
-          weight: "normal",
-          style: "normal",
+window.onload = init;
+</script>
 
-          bevelEnabled: false,
-
-          material: 0,
-          extrudeMaterial: 1
-
-        });
-
-        textGeo.computeBoundingBox();
-
-        var textMesh1 = new THREE.Mesh( textGeo, material );
-
-        return textMesh1;
-    }
-  </script>
-  </body>
 </html>
