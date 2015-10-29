@@ -130,7 +130,7 @@ function init() {
   scene.add(mesh);
 
   /////// beautiful D3 code ////////
-  d3.csv('data.csv', population, function(data){ 
+  d3.csv('data/data.csv', population, function(data){ 
     xscale.domain([0, data.length - 1]);
     yscale.domain([0, d3.max(data, function(d){ return d.all; })]);
     
