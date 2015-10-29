@@ -10,7 +10,7 @@ I also added a [Chrome experiments style reticule](https://vr.chromeexperiments.
 
 1. [Clone this repository](https://help.github.com/articles/cloning-a-repository/), or if you don't have a github account, download a zip of this repository. 
 
-2. Install node and npm by (downloading the installer on Nodejs.org)[https://help.github.com/articles/cloning-a-repository/].
+2. Install node and npm by [downloading the installer on Nodejs.org](https://help.github.com/articles/cloning-a-repository/).
 
 3. Install localtunnel by running `npm install -g localtunnel`.
 
