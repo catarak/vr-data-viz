@@ -1,10 +1,14 @@
 What is THREE.js?
 
-It is a 3D graphics JavaScript library. One of its main benefits is that it can render using the WebGL API. It simplifies a lot of annoying stuff by A LOT. The WebGL API allows your browser to access you computer's GPU and do the graphics processing there, instead of in the browser. This allows you to make incredible things.
+What is THREE.js? It is a 3D graphics JavaScript library. One of its main benefits is that it can render using the WebGL API. The WebGL API allows your browser to access you computer's GPU and do the graphics processing there, instead of in the browser. This allows you to make incredible, intricate projects that can use a lot of processing power and still run smoothly.
 
-Basic elements of a THREE.js sketch
+What are the basic elements of a THREE.js sketch?
 
-Renderer - determines how everything is being rendered. You can choose canvas, svg, or WebGL. WebGL runs on your GPU, therefore it is far superior. 
+You can think of a THREE.js sketch like the filming of a movie, in which lights and objects arranged in a scene and then captured by a camera. Instead of creating a film, however, you create a set of instructions that tells your computer how to create the scene. And it's easy to make it interactive rather than static. 
+
+The basic elements are:
+
+Renderer - determines how everything is being rendered. You can choose canvas, svg, or WebGL. WebGL runs on your GPU, therefore it is superior. 
 
 Scene - it holds everything that you want to be rendered. 
 
@@ -17,14 +21,20 @@ Lights - You have to have some lights in your scene, or else it will be totally 
 Basic code setup (if you've used Processing, Arduino, P5.js, etc. this should look familiar)
 
 function init() {
-  //initial configuration
+  //initial configuration and drawing, runs once
 }
 
 function animate() {
+  //draw code to run every frame
   requestAnimationFrame(animate);
 }
 
+requestAnimationFrame tells the browser to run the function passed in at the next available moment. It depends on the frame rate of your browser and your computer, which is usually 60fps.
+
+(more technical, as compared to setTimeout)
 if you're not familiar, requestAnimationFrame is very similar to setTimeout, except you don't specify the rate. it depends on the frame rate of your browser and your computer, which is usually 60fps. Instead of requesting the browser to redraw the scene at a set interval length, it redraws the scene at the next available opportunity. This also means that the CPU can optimize the performance based on other factors. And it will slow way down if, say, you've navigated to a new tab and you can't see the animation. 
+
+Axes - Right handed
 
 THREE.js uses a lot of graphics terminology. If you ever look at the documentation it's still not helpful, I recommend searching for the terms you're confused about outside of the context of just THREE.js
 
@@ -36,6 +46,6 @@ VRControls - connects the head tracking movement to the scene's camera
 VREffect - converts the scene to stereoscopic rendering. 
 VRManager - controls configuration and rendering for various devices, e.g. your laptop, Google Cardboard, Oculus.
 
-Axes - Right handed
-
 Translating D3 shapes to Three.js shapes
+
+Wait, isn't D3 a drawing library? NO! It's a library to help you parse data and use that data to draw shapes. People just happen to use SVG most of the time. You can take the D3 knowledge you already have and just use different shapes. 

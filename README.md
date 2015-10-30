@@ -1,10 +1,19 @@
-# Google Cardboard + Three.js + D3 Basic Example
+#UN Immersive Data Visualization Examples
 
-Created from a [tutorial I found on Storybench](http://www.storybench.org/how-to-make-a-simple-virtual-reality-data-visualization/). [Source code here](https://github.com/rogerkenny/3D-chart-tutorial). 
+This project was created as a few examples for a workshop in immersive data visualization at the UN on October 30th, 2015.These examples hope to explore a series of projects that combine THREE.js, D3, and Virtual Reality. 
+
+This was inspired from a [tutorial I found on Storybench](http://www.storybench.org/how-to-make-a-simple-virtual-reality-data-visualization/). [Source code here](https://github.com/rogerkenny/3D-chart-tutorial). 
 
 I adapted the tutorial to use the [webvr-boilerplate](https://github.com/borismus/webvr-boilerplate).  
 
 I also added a [Chrome experiments style reticule](https://vr.chromeexperiments.com/), adapted from a [small reticle THREE.js library](https://github.com/GQPBJ/Reticulum) I found on github.
+
+#Examples
+
+`basic.html`: a basic THREE.js sketch with no VR or D3
+`basic-with-vr.html`: a simple THREE.js sketch configured for use with VR
+`bar-chart-vr.html`: a interactive bar chart example, combining THREE.js, D3, and VR
+`map-vr.html`: an interactive map example, combining THREE.js, D3, and VR
 
 #Installation and Setup
 
