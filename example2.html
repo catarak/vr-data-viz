@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<title>Web VR boilerplate</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<style>
+body {
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  color: #fff;
+  margin: 0px;
+  padding: 0;
+  overflow: hidden;
+}
+</style>
+</head>
+
+<body>
+
+</body>
+
+<script>
+/*
+ * Debug parameters.
+ */
+WebVRConfig = {
+  /**
+   * webvr-polyfill configuration
+   */
+  // Forces availability of VR mode.
+  FORCE_ENABLE_VR: true, // Default: false.
+  // Complementary filter coefficient. 0 for accelerometer, 1 for gyro.
+  //K_FILTER: 0.98, // Default: 0.98.
+  // How far into the future to predict during fast motion.
+  //PREDICTION_TIME_S: 0.050, // Default: 0.050s.
+  /**
+   * webvr-boilerplate configuration
+   */
+  // Forces distortion in VR mode.
+  //FORCE_DISTORTION: true, // Default: false.
+  // Override the distortion background color.
+  //DISTORTION_BGCOLOR: {x: 1, y: 0, z: 0, w: 1}, // Default: (0,0,0,1).
+};
+</script>
+<script src="js/third-party/threejs/three.js"></script>
+<script src="js/third-party/threejs/VRControls.js"></script>
+<script src="js/third-party/threejs/VREffect.js"></script>
+<script src="js/third-party/webvr-polyfill.js"></script>
+<script src="js/third-party/webvr-manager.js"></script>
+<script src="js/third-party/threejs/FontUtils.js"></script>
+<script src="js/third-party/threejs/TextGeometry.js"></script>
+<script src="js/optimer_bold.typeface.js"></script>
+<script src="js/optimer_regular.typeface.js"></script>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script src="js/third-party/reticulum.js"></script>
+
+
+<script>
+var camera, scene, renderer;
+var effect, controls;
+var element, container;
+var manager;
+var cube;
+
+//d3 variables
+// var marginbottom = 4, chartwidth = 100, chartheight = 50; //3D units
+// var xscale = d3.scale.linear().range([-chartwidth/2, chartwidth/2]),
+//     yscale = d3.scale.linear().range([0, chartheight]);
+var mapWidth = 50, mapHeight = 25, mapDepth = 8;
+var colwidth = 0.3;
+
+function init() {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  document.body.appendChild(renderer.domElement);
+
+  scene = new THREE.Scene();
+  
+  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+      camera.position.set(0, -2, 35);
+
+  controls = new THREE.VRControls(camera);
+
+  effect = new THREE.VREffect(renderer);
+  effect.setSize(window.innerWidth, window.innerHeight);
+
+  manager = new WebVRManager(renderer, effect, {hideButton: false});
+
+  //Scene objects
+  var light = new THREE.HemisphereLight(0x777777, 0x000000, 0.6);
+  scene.add(light);
+
+  var objlight = new THREE.PointLight(0xffffff, 0.7);
+  objlight.position.set(0, -50, 70);
+  scene.add(objlight);
+
+  //Add map to scene
+  var geometry = new THREE.PlaneGeometry(mapWidth, mapHeight);
+  var texture = THREE.ImageUtils.loadTexture(
+    'textures/earthspec10k.jpg'
+  );
+  var material = new THREE.MeshPhongMaterial({
+    color: 0xffffff,
+    specular: 0xffffff,
+    shininess: 1,
+    shading: THREE.FlatShading,
+    map: texture
+  });
+  var mesh = new THREE.Mesh(geometry, material);
+  //mesh.rotation.x = -Math.PI / 2;
+  scene.add(mesh);
+
+  //i cannot get this project to work, so i am giving up
+  var projection = d3.geo.equirectangular()
+            .scale(mapHeight)
+            .translate([mapWidth / 2, mapHeight / 2]);
+
+  /////// beautiful D3 code ////////
+  d3.json('data/countries_syria.json', function(data){ 
+    var yMax = d3.max(data, function(d) { return +d.population[0].value;} );
+    var yscale = d3.scale.linear().domain([0, yMax]).range([0, mapDepth]);
+    data.forEach(function(d, i, a){
+      countryParser(d);
+      // var coordinates = projection([d.latitude, d.longitude]);
+      var coordinates = [(mapWidth/360.0) * (180 + d.longitude), (mapHeight/180.0) * (90 + d.latitude)]
+
+      var colheight = yscale(d.population[0].value);
+      var columnmaterial = new THREE.MeshPhongMaterial({ color: "#ff0000" });
+      var columngeo = new THREE.BoxGeometry(colwidth, colwidth, colheight);
+      var columnmesh = new THREE.Mesh(columngeo, columnmaterial);
+      columnmesh.position.set(coordinates[0]-mapWidth/2, coordinates[1]-mapHeight/2, colheight/2);
+
+
+      var labelmesh;
+      labelmesh = createType({text: d.name + ": " + delimitNumbers(d.population[0].value), size: 0.7, color: 0xff0000});
+      labelmesh.position.set(coordinates[0]-mapWidth/2 + 2, coordinates[1]-mapHeight/2 - 2, colheight/2);
+      labelmesh.visible = false;
+      scene.add(labelmesh);
+      //Box geometry is positioned at its’ center,
+      //so we need to move it up by half the height
+      columnmesh.ongazeover = function(){
+        this.material.color.setHex( 0xffcc00 );
+        labelmesh.visible = true;
+      }
+      // have the columnmesh react when user looks away from it
+      columnmesh.ongazeout = function(){
+        this.material.color.setHex( 0xff0000 );
+        labelmesh.visible = false;
+      }
+
+      Reticulum.addCollider(columnmesh, { fuse: true } );
+
+      scene.add(columnmesh);
+
+    });
+
+  });
+
+  var title = createType({text: "Syrian Refugee Population Per Country, as of October 2015", size: 1.4});
+  title.position.set(-mapWidth/2, mapHeight/2 + 5, -10);
+  scene.add(title);
+
+  var srctext = createType({text: "Source: UNHCR", size: 1});
+  var xOffset = ( srctext.geometry.boundingBox.max.x - srctext.geometry.boundingBox.min.x );
+  srctext.position.set(mapWidth/2 - xOffset, -mapHeight/2 - 2, 0);
+  scene.add(srctext);
+
+  // // Reticle configuration
+  Reticulum.init(camera, {
+    proximity: false,
+    reticle: {
+      visible: true,
+      far: 10, //Defines the reticle's resting point when no object has been targeted
+      color: 0x0000ff,
+      innerRadius: 0.0001,
+      outerRadius: 0.003,
+      hover: {
+        color: 0xcc0000,
+        innerRadius: 0.02,
+        outerRadius: 0.024,
+        speed: 5,
+        vibrate: 50 //Set to 0 or [] to disable
+      }
+    },
+    fuse: {
+      visible: false,
+      duration: 2.5,
+      color: 0x00fff6,
+      innerRadius: 0.045,
+      outerRadius: 0.06,
+      vibrate: 0 //Set to 0 or [] to disable
+    }
+  });
+  scene.add(camera);
+  //end Reticle configuration
+
+  window.addEventListener('resize', onResize, false);
+
+  animate();
+}
+
+function animate(timestamp) {
+  Reticulum.update();
+  controls.update();
+  camera.updateMatrixWorld();
+  manager.render(scene, camera, timestamp);
+  requestAnimationFrame(animate);
+}
+
+//D3 helper function for parsing refugee population dataset
+function countryParser(d) {
+  d.latitude = +d.latitude;
+  d.longitude = +d.longitude;
+  d.population[0].value = +d.population[0].value;
+}
+
+function createType(options) {
+  var height = options.height || 0.1,
+      size = options.size || 3,
+      color = options.color !== undefined ? options.color : 0xffffff,
+      material = new THREE.MeshFaceMaterial( [
+        new THREE.MeshPhongMaterial( { color: color, shading: THREE.FlatShading } ), // front
+        new THREE.MeshPhongMaterial( { color: color, shading: THREE.SmoothShading } ) // side
+      ] ),
+      text = options.text || "Test";
+
+  var textGeo = new THREE.TextGeometry( text, {
+
+      size: size,
+      height: height,
+      curveSegments: 4,
+
+      font: "optimer",
+      weight: "normal",
+      style: "normal",
+
+      bevelEnabled: false,
+
+      material: 0,
+      extrudeMaterial: 1
+
+    });
+
+    textGeo.computeBoundingBox();
+
+    var textMesh1 = new THREE.Mesh( textGeo, material );
+
+    return textMesh1;
+}
+
+// Reset the position sensor when 'z' pressed.
+function onKey(event) {
+  if (event.keyCode == 90) { // z
+    controls.resetSensor();
+  }
+}
+window.addEventListener('keydown', onKey, true);
+
+function onResize() {
+  var width = window.innerWidth;
+  var height = window.innerHeight;
+
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+
+  effect.setSize(width, height);
+}
+
+//Cardboard button event handlers
+function handleClick() {
+  Reticulum.detectHit(true);
+}
+
+function handleTouch() {
+  Reticulum.detectHit(true);
+}
+
+//from http://cwestblog.com/2011/06/23/javascript-add-commas-to-numbers/
+function delimitNumbers(str) {
+  return (str + "").replace(/\b(\d+)((\.\d+)*)\b/g, function(a, b, c) {
+    return (b.charAt(0) > 0 && !(c || ".").lastIndexOf(".") ? b.replace(/(\d)(?=(\d{3})+$)/g, "$1,") : b) + c;
+  });
+}
+
+window.onload = init;
+</script>
+
+</html>
