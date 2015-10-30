@@ -55,13 +55,30 @@ WebVRConfig = {
   three.js 3d library
   -->
 <script src="js/third-party/threejs/three.js"></script>
-<script src="js/third-party/threejs/OrbitControls.js"></script>
+<!--
+  VRControls.js acquires positional information from connected VR devices and applies the transformations to a three.js camera object.
+   -->
+<script src="js/third-party/threejs/VRControls.js"></script>
+
+<!--
+  VREffect.js handles stereo camera setup and rendering.
+  -->
+<script src="js/third-party/threejs/VREffect.js"></script>
+
+<!--
+  A polyfill for WebVR using the Device{Motion,Orientation}Event API.
+  -->
+<script src="js/third-party/webvr-polyfill.js"></script>
+
+<!--
+  Helps enter and exit VR mode, provides best practices while in VR.
+  -->
+<script src="js/third-party/webvr-manager.js"></script>
 
 
 <script>
 //Setup three.js WebGL renderer
 var renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 
 // Append the canvas element created by the renderer to document body element.
@@ -72,23 +89,14 @@ var scene = new THREE.Scene();
 
 // Create a three.js camera.
 var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
-scene.add(camera)
+//scene.add(camera)
 
 // Apply VR headset positional data to camera.
-// var controls = new THREE.VRControls(camera);
-controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.constraint.rotateUp(Math.PI / 4);
-controls.target.set(
-  camera.position.x,
-  camera.position.y + 0.1,
-  camera.position.z - 0.1
-);
-controls.enableZoom = false;
-controls.enablePan = false;
+var controls = new THREE.VRControls(camera);
 
 // Apply VR stereo rendering to renderer.
-// var effect = new THREE.VREffect(renderer);
-// effect.setSize(window.innerWidth, window.innerHeight);
+var effect = new THREE.VREffect(renderer);
+effect.setSize(window.innerWidth, window.innerHeight);
 
 
 // Add a repeating grid as a skybox.
@@ -112,7 +120,7 @@ scene.add(skybox);
 
 
 // Create a VR manager helper to enter and exit VR mode.
-// var manager = new WebVRManager(renderer, effect, {hideButton: false});
+var manager = new WebVRManager(renderer, effect, {hideButton: false});
 
 // Create 3D objects.
 var geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
@@ -134,8 +142,8 @@ function animate(timestamp) {
   controls.update();
 
   // Render the scene through the manager.
-  // manager.render(scene, camera, timestamp);
-  renderer.render(scene, camera);
+  manager.render(scene, camera, timestamp);
+  // renderer.render(scene, camera);
 
   requestAnimationFrame(animate);
 }
@@ -157,10 +165,11 @@ function onResize() {
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
 
-  renderer.setSize(width, height);
+  effect.setSize(width, height);
 }
 
 window.addEventListener('resize', onResize, false);
+
 window.addEventListener('keydown', onKey, true);
 
 </script>

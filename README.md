@@ -22,5 +22,5 @@ I also added a [Chrome experiments style reticule](https://vr.chromeexperiments.
 
 7. In a new terminal window, run `lt --port 8080`.
 
-8. On your phone, navigate to the url that localtunnel spits out. The url is a little annoying to type, so I recommend using a [url shortener](http://shoutkey.com/). 
+8. On your phone, navigate to the url that localtunnel spits out. The url is a little annoying to type, so I recommend using a [url shortener](http://shoutkey.com/). If the name of your html file is not index.html, you will need to navigate to the url/name-of-html-page.html.
 
